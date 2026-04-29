@@ -1,0 +1,46 @@
+{
+  "extends": "default",
+  "meta": {
+    "name": "gc___CITY_NAME___worker",
+    "description": "Gas City worker — city-scoped Claude Code sandbox. CLAUDE_CONFIG_DIR must be __CITY_PATH__/.claude."
+  },
+  "security": {
+    "groups": [
+      "claude_code_macos",
+      "claude_code_linux",
+      "linux_sysfs_read",
+      "unlink_protection"
+    ],
+    "signal_mode": "isolated",
+    "capability_elevation": false
+  },
+  "filesystem": {
+    "allow": ["__CITY_PATH__"],
+    "allow_file": [
+      "__CITY_PATH__/.claude.json",
+      "__CITY_PATH__/.claude.json.lock",
+      "__CITY_PATH__/.claude.lock"
+    ]
+  },
+  "policy": {
+    "add_deny_access": [
+      "$HOME/.claude",
+      "$HOME/.claude.json"
+    ]
+  },
+  "network": {
+    "block": false,
+    "credentials": ["anthropic"]
+  },
+  "workdir": { "access": "readwrite" },
+  "open_urls": {
+    "allow_origins": ["https://claude.ai"],
+    "allow_localhost": true
+  },
+  "allow_launch_services": true,
+  "undo": {
+    "exclude_patterns": ["node_modules", ".next", "__pycache__", "target"],
+    "exclude_globs": ["*.tmp.[0-9]*.[0-9]*"]
+  },
+  "interactive": true
+}

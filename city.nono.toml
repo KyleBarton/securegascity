@@ -1,0 +1,21 @@
+[workspace]
+name = "my-city"
+
+[providers.nono]
+display_name = "Nono"
+command = "nono"
+args = ["run", "--allow", "/path/to/city", "--credential", "anthropic"]
+prompt_mode = "arg"                           # or "flag" if nono takes --prompt
+ready_delay_ms = 3000
+ready_prompt_prefix = "> "                   # whatever nono's shell shows
+process_names = ["nono"]
+instructions_file = "AGENTS.md"
+
+# If nono supports session resume:
+# resume_flag = "--resume"
+# resume_style = "flag"
+
+[[agent]]
+name = "worker"
+provider = "nono"
+start_command = "your agent command"
