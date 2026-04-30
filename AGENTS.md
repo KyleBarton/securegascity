@@ -16,10 +16,9 @@ If you add a new template file that needs substitution, add it to the loop in
 
 ## Profile file naming
 
-The nono profile template is named `gc___CITY_NAME___worker.json` — three
-underscores before `CITY` and three after `NAME`. This is not a typo: the
-pattern is `gc_` + `__CITY_NAME__` + `_worker`, so the double-underscore
-delimiters merge with the single-underscore separators.
+The nono profile template is named `gc-__CITY_NAME__-worker.json` — the
+pattern is `gc-` + `__CITY_NAME__` + `-worker`. Hyphens are used as
+separators because nono requires alphanumeric-plus-hyphen profile names.
 
 The init script identifies template profiles by matching `*__CITY_NAME__*.json`
 and renames them on copy, expanding the placeholder in the filename.

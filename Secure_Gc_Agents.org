@@ -82,11 +82,12 @@ nono only looks for user profiles in =~/.config/nono/profiles/=. Profiles
 must be placed there directly — there is no flag to point nono at an
 arbitrary path.
 
-By convention, Gas City profiles should be named =gc_<city-name>_<agent-name>.json=:
+By convention, Gas City profiles should be named =gc-<city-name>-<agent-name>.json=
+(hyphens only — nono requires alphanumeric + hyphen profile names):
 
 #+begin_src sh
-~/.config/nono/profiles/gc_myproject_worker.json
-~/.config/nono/profiles/gc_myproject_reviewer.json
+~/.config/nono/profiles/gc-myproject-worker.json
+~/.config/nono/profiles/gc-myproject-reviewer.json
 #+end_src
 
 This makes it easy to identify which city and agent a profile belongs to

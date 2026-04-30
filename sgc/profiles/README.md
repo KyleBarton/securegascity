@@ -5,12 +5,12 @@ are templates — copy them there before launching the city.
 
 ## Naming convention
 
-`gc_<city-name>_<agent-name>.json`
+`gc-<city-name>-<agent-name>.json`
 
 ## Installation
 
 ```sh
-cp profiles/gc_sgc_worker.json ~/.config/nono/profiles/
+cp profiles/gc-sgc-worker.json ~/.config/nono/profiles/
 ```
 
 ## Adding credentials

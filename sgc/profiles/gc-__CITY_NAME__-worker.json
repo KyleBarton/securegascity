@@ -1,14 +1,12 @@
 {
-  "extends": "default",
   "meta": {
-    "name": "gc___CITY_NAME___worker",
+    "name": "gc-__CITY_NAME__-worker",
     "description": "Gas City worker — city-scoped Claude Code sandbox. CLAUDE_CONFIG_DIR must be __CITY_PATH__/.claude."
   },
   "security": {
     "groups": [
       "claude_code_macos",
       "claude_code_linux",
-      "linux_sysfs_read",
       "unlink_protection"
     ],
     "signal_mode": "isolated",

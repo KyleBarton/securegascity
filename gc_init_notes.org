@@ -1,0 +1,117 @@
+#+TITLE: Gas City Setup Notes — Beads Initialization
+#+DATE: 2026-04-28
+
+* Summary
+
+The core issue: ~bd init~ must run *after* ~gc init~ and *after* ~git init~, and the city must be
+restarted after beads is initialized. Running ~bd init~ standalone before gc sets up the
+managed-city beads backend creates a split-store problem that breaks session creation.
+
+* Correct Setup Order
+
+** Step 1: Initialize the city with gc
+
+#+begin_src sh
+gc init ./my-city
+# Choose template (minimal for default coding agent)
+# Choose agent (Claude Code)
+#+end_src
+
+This creates the runtime scaffold, hooks, prompts, ~pack.toml~, and ~city.toml~.
+It registers the city with the supervisor and starts it.
+
+** Step 2: Initialize git inside the city directory
+
+#+begin_src sh
+cd my-city
+git init
+#+end_src
+
+Must happen *before* running ~bd init~, otherwise beads cannot commit its files to git
+and repository/clone IDs will be missing (warns "not a git repository").
+
+** Step 3: Run bd init
+
+Use the prefix and database that gc already configured in ~.beads/config.yaml~:
+
+#+begin_src sh
+# Check what prefix gc assigned:
+cat .beads/config.yaml
+
+# Then init with matching values:
+bd init --reinit-local --prefix <prefix> --database <prefix> --non-interactive --role maintainer
+#+end_src
+
+For a ~gc init~ minimal city, gc auto-assigns a short prefix (e.g. ~mc~ for "my-city").
+Use ~--reinit-local~ (not ~--force~, which is deprecated).
+
+** Step 4: Restart the city
+
+#+begin_src sh
+gc restart
+#+end_src
+
+This unregisters, stops, re-registers, and restarts the city so the controller picks
+up the initialized beads store. Without this step, the supervisor process still runs
+against an uninitialized config and ~bd create~ will fail with "issue_prefix config is missing".
+
+** Step 5: Verify sessions come up
+
+#+begin_src sh
+gc status
+# Named sessions should show "creating" then "awake", not "reserved-unmaterialized"
+
+gc session attach mayor
+#+end_src
+
+* What Goes Wrong Without This Order
+
+** Running bd init before gc start
+
+If you run ~bd init~ standalone (embedded mode) then ~gc start~, gc creates its own managed-city
+dolt endpoint (~.beads/dolt~) separate from the embedded one (~.beads/embeddeddolt~). You end up
+with a split store:
+
+- Active: ~.beads/dolt~ (gc-managed, ~endpoint_origin=managed_city~) — empty, no prefix set
+- Inactive: ~.beads/embeddeddolt~ — has your data but gc ignores it
+
+~gc doctor~ will flag this as ~bd-split-store~. Sessions fail because the active store has no
+~issue_prefix~ configured.
+
+Recovery: export from ~.beads/embeddeddolt~, review with ~bd import --dry-run~, import into active
+store. Keep both directories until reconciled.
+
+** Running bd init before git init
+
+Beads cannot commit its files. You get warnings like "could not compute repository ID"
+and "failed to commit beads files". Re-running ~bd init --reinit-local~ after ~git init~
+fixes this.
+
+** Not restarting after bd init
+
+The supervisor reads beads config at start time. If the city is already running when you
+run ~bd init~, ~bd config get issue_prefix~ will show "(not set)" in the supervisor's context.
+A ~gc restart~ is required to reload the config.
+
+* Dependency: gh CLI
+
+~gc doctor~ requires ~gh~ in PATH. Install it if missing:
+
+#+begin_src sh
+brew install gh
+#+end_src
+
+* Quick Reference
+
+#+begin_example
+gc init ./my-city          # scaffold + register + start
+cd my-city
+git init                   # before bd init
+bd init --reinit-local \
+  --prefix <prefix> \
+  --database <prefix> \
+  --non-interactive \
+  --role maintainer
+gc restart                 # pick up initialized beads
+gc status                  # confirm mayor is "awake"
+#+end_example

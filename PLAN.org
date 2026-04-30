@@ -1,0 +1,221 @@
+#+TITLE: Plan: Gas City Within Nono Sandbox
+#+DATE: 2026-04-29
+
+* What We're Solving
+
+Two root problems prevent a Gas City city from running correctly inside a
+nono sandbox:
+
+1. *Home-directory reads are blocked.* Every ~git~ invocation reads
+   =~/.gitconfig= before doing anything else. Every tool that follows Unix
+   conventions (~cargo~, ~npm~, ~go~, etc.) reads from =~/.something=.
+   The nono sandbox blocks all paths outside the city, so those reads fail
+   with EPERM.
+
+2. *~gc rig add~ conflicts with the running dolt server.* The rig-init
+   path calls ~beads start~ internally, which conflicts with the city's
+   already-running managed dolt server on port 11439, producing "invalid
+   managed dolt runtime state."
+
+Both problems dissolve with the right architecture. This plan addresses
+them together.
+
+* Architecture Decision: File-Based Beads Provider
+
+Gas City supports two beads backends:
+
+| Backend | Config | Storage | Requires |
+|---------|--------|---------|---------|
+| ~bd~ (default) | ~[beads]\nprovider = "bd"~ | Dolt SQL server | dolt process, TCP port, ~DOLT_ROOT_PATH~, managed server lifecycle |
+| ~file~ | ~[beads]\nprovider = "file"~ | JSONL on disk | nothing — pure filesystem |
+
+Setting ~provider = "file"~ in ~city.toml~ means:
+- ~cityUsesBdStoreContract()~ returns ~false~
+- The entire dolt lifecycle is bypassed: no server start, no port 11439,
+  no ~publishManagedDoltRuntimeState~
+- ~gc rig add~ no longer calls ~beads start~ for rigs — the conflict
+  disappears
+- ~DOLT_ROOT_PATH~ is unnecessary
+- The rig adoption problem (Phase 2/3 of the old plan) goes away
+
+*Trade-off:* The file store is simpler than dolt — no SQL queries, no
+git-style task history, no branching. For a sandboxed coding agent city
+that creates/claims/closes tasks, this is sufficient. The dolt backend
+exists for workspaces that need multi-writer conflict resolution or
+history. We don't.
+
+*This is the right architectural choice for sandboxed cities.*
+
+* The Two-Part Fix
+
+** Part 1 — Add ~[beads]\nprovider = "file"~ to ~city.toml~ template
+
+In ~sgc/city.toml~, add:
+
+#+begin_src toml
+[beads]
+provider = "file"
+#+end_src
+
+This single line eliminates the dolt lifecycle entirely. No other changes
+are required to fix the rig-add conflict.
+
+** Part 2 — Redirect ~HOME~ to contain all tool config reads
+
+Setting ~HOME=$CITY_PATH/home~ in ~[agent.env]~ covers every tool that
+follows Unix conventions (~git~, ~cargo~, ~npm~, ~go~, ~pip~, etc.)
+without needing a per-tool env var. All of ~$HOME/.gitconfig~,
+~$HOME/.cargo~, ~$HOME/.npm~, ~$HOME/.config~, etc. redirect inside the
+city automatically.
+
+Using a ~home/~ subdirectory (rather than the city root itself) keeps
+the city root clean — ~city.toml~, ~AGENTS.md~, ~.beads/~, ~.gc/~ are
+not mixed with dotfiles.
+
+*** CLAUDE_CONFIG_DIR
+
+Claude Code reads its config from ~$HOME/.claude~ by default.
+With ~HOME=$CITY_PATH/home~, the default resolves to
+~$CITY_PATH/home/.claude~ — exactly where we want it.
+
+~CLAUDE_CONFIG_DIR~ is therefore *redundant* and can be removed from
+~[agent.env]~. The city-scoped ~.claude/~ template directory moves from
+~sgc/.claude/~ to ~sgc/home/.claude/~.
+
+One nuance: ~Secure_Gc_Agents.org~ notes that ~CLAUDE_CONFIG_DIR~ appears
+on an explicit passthrough allowlist in the supervisor service
+(~cmd_supervisor_lifecycle.go:391~), which means it survives launchd
+restarts when set in the parent shell. Since we are setting ~HOME~ via
+~[agent.env]~ (read from ~city.toml~ at agent-spawn time, not inherited
+from the shell), this passthrough mechanism is irrelevant — the value
+comes from config, not environment inheritance.
+
+*** Nono profile
+
+The profile currently lists ~allow_file~ entries for
+=__CITY_PATH__/.claude.json= and =__CITY_PATH__/.claude.json.lock=.
+With ~HOME=$CITY_PATH/home~, these files move to
+=__CITY_PATH__/home/.claude.json= etc. — still within the recursively
+allowed ~__CITY_PATH__~, so no profile changes are required.
+
+* Implementation Plan
+
+** Step 1 — ~sgc/city.toml~ template
+
+Changes:
+- Add ~[beads]\nprovider = "file"~
+- Change ~[agent.env]~ to set only ~HOME = "__CITY_PATH__/home"~
+- Remove ~CLAUDE_CONFIG_DIR~ from ~[agent.env]~
+
+Result:
+
+#+begin_src toml
+[beads]
+provider = "file"
+
+[agent.env]
+HOME = "__CITY_PATH__/home"
+#+end_src
+
+** Step 2 — Move ~.claude/~ template into ~home/~
+
+Move ~sgc/.claude/~ → ~sgc/home/.claude/~.
+
+~sgc-init.sh~ copies ~sgc/.~ to the city root. After the move, the
+~.claude/~ directory lands at ~$CITY_PATH/home/.claude/~, which is where
+Claude Code will look with the new HOME.
+
+** Step 3 — ~sgc-init.sh~ updates
+
+After copying the template tree:
+
+1. Create the home subdirectory (if not already created by the copy):
+   #+begin_src bash
+   mkdir -p "$CITY_PATH/home"
+   #+end_src
+
+2. Seed a minimal git config so git operations work:
+   #+begin_src bash
+   cat > "$CITY_PATH/home/.gitconfig" <<EOF
+   [user]
+       name  = $CITY_NAME
+       email = $CITY_NAME@gasworld.local
+   [init]
+       defaultBranch = main
+   EOF
+   #+end_src
+
+3. Remove the dolt-seeding step (no longer needed — file provider, no dolt).
+
+4. Update placeholder substitution: ~sgc-init.sh~ already iterates
+   ~city.toml~ and ~AGENTS.md~ for ~__CITY_PATH__~ / ~__CITY_NAME__~
+   substitution. No change needed for this step since ~HOME~ in
+   ~[agent.env]~ is substituted by the existing loop.
+
+** Step 4 — Nono profile: update ~allow_file~ paths
+
+The profile template (~sgc/profiles/gc-__CITY_NAME__-worker.json~)
+currently lists:
+
+#+begin_src json
+"allow_file": [
+  "__CITY_PATH__/.claude.json",
+  "__CITY_PATH__/.claude.json.lock",
+  "__CITY_PATH__/.claude.lock"
+]
+#+end_src
+
+Update to:
+
+#+begin_src json
+"allow_file": [
+  "__CITY_PATH__/home/.claude.json",
+  "__CITY_PATH__/home/.claude.json.lock",
+  "__CITY_PATH__/home/.claude.lock"
+]
+#+end_src
+
+(These are still inside the recursively allowed ~__CITY_PATH__~, but the
+explicit entries exist for clarity — keep them consistent.)
+
+** Step 5 — Update ~sgc/AGENTS.md~
+
+Add a note explaining:
+- ~HOME~ is set to ~$CITY_PATH/home/~ — all tool config lives there
+- ~git~ works because ~$HOME/.gitconfig~ is seeded at init time
+- Tools that write to ~$HOME/...~ (cargo, npm, go, etc.) are sandboxed
+  automatically inside the city
+- If a tool reads a home-dir path and fails, the answer is NOT to allow
+  that external path — it means the tool needs to be pointed at its
+  ~$HOME~-relative location, which the redirect already provides
+
+** Step 6 — Verify end-to-end
+
+After ~gc restart~, attach to the mayor session and confirm:
+- ~git status~ works (reads ~$CITY_PATH/home/.gitconfig~)
+- ~gc rig add rigs/gascity~ works (file provider, no dolt conflict)
+- Claude Code agent identity is city-scoped (no leak to ~$HOME/.claude~)
+
+* What This Does NOT Require
+
+- No dolt seeding at init time
+- No ~DOLT_ROOT_PATH~ env var
+- No ~CLAUDE_CONFIG_DIR~ env var
+- No fork of gascity (~GC_DOLT=skip~ and ~--adopt~ workarounds are moot)
+- No changes to the nono profile security model
+
+* Open Questions
+
+1. Does ~gc rig add~ (without ~--adopt~) work cleanly with the file
+   provider, or does it still hit a code path that references the dolt
+   lifecycle? The ~cityUsesBdStoreContract()~ guard should short-circuit
+   it, but this needs a live test.
+
+2. Does the file beads provider support everything the agents actually
+   need (create/claim/close tasks, mail, molecules)? Based on the source,
+   yes — but this should be confirmed with ~bd status~ after city start.
+
+* Cleanup
+
+The ~gascity/~ subfolder (cloned for research) should be removed before
+committing — it is not part of this template.

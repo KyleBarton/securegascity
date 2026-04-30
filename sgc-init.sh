@@ -6,25 +6,23 @@ TEMPLATE_DIR="$SCRIPT_DIR/sgc"
 
 # ── Prompt ────────────────────────────────────────────────────────────────────
 
-echo -n "Destination path for your secure Gas City: "
-read -r CITY_PATH
+read -e -r -p "Destination path for your secure Gas City: " CITY_PATH
 
-# Expand ~ if the user typed it
+# Expand ~ if the user typed it, then strip any trailing slashes
 CITY_PATH="${CITY_PATH/#\~/$HOME}"
+CITY_PATH="${CITY_PATH%/}"
 
 # Derive city name from the final path component
 CITY_NAME="$(basename "$CITY_PATH")"
 
 # ── Validate ──────────────────────────────────────────────────────────────────
 
-if [[ -e "$CITY_PATH" ]]; then
-  echo "error: $CITY_PATH already exists" >&2
+if [[ ! -d "$CITY_PATH" ]]; then
+  echo "error: $CITY_PATH does not exist — run 'gc init' first" >&2
   exit 1
 fi
 
 # ── Copy template tree ────────────────────────────────────────────────────────
-
-mkdir -p "$CITY_PATH"
 
 # cp -r src/. dst/ copies hidden files and directories (e.g. .claude/)
 cp -r "$TEMPLATE_DIR/." "$CITY_PATH/"
@@ -53,18 +51,11 @@ for src in "$TEMPLATE_DIR/profiles/"*__CITY_NAME__*.json; do
   dest_name="${raw_name//__CITY_NAME__/$CITY_NAME}"
   dest="$NONO_PROFILES_DIR/$dest_name"
 
-  sed "s|__CITY_NAME__|$CITY_NAME|g" "$src" > "$dest"
+  sed -e "s|__CITY_NAME__|$CITY_NAME|g" -e "s|__CITY_PATH__|$CITY_PATH|g" "$src" > "$dest"
   echo "profile installed: $dest"
 done
 
-# ── Done ──────────────────────────────────────────────────────────────────────
+# ── Restart city ─────────────────────────────────────────────────────────────
 
-cat <<EOF
-
-City initialized at: $CITY_PATH
-
-To launch:
-  CLAUDE_CONFIG_DIR="$CITY_PATH/.claude" gc start
-
-Or add the sgc() shell function from the org notes to your ~/.zshrc.
-EOF
+echo "restarting city at: $CITY_PATH"
+(cd "$CITY_PATH" && gc restart)

@@ -6,8 +6,10 @@ display_name = "Nono"
 command = "nono"
 args = [
   "run",
-  "--profile", "gc___CITY_NAME___worker",
+  "--profile", "gc-__CITY_NAME__-worker",
+  "--allow-cwd",
   "--",
+  "claude"
 ]
 prompt_mode = "arg"
 ready_delay_ms = 3000
@@ -20,8 +22,12 @@ instructions_file = "AGENTS.md"
 # resume_style = "flag"
 
 [[agent]]
-name = "worker"
+name = "mayor"
 provider = "nono"
-# Claude Code CLI — nono injects ANTHROPIC_BASE_URL and NONO_PROXY_TOKEN
-# automatically via the credential binding in the worker profile.
-start_command = "claude"
+
+[agent.env]
+CLAUDE_CONFIG_DIR = "__CITY_PATH__/.claude"
+
+[[named_session]]
+template = "mayor"
+mode = "always"

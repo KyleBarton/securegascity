@@ -19,7 +19,7 @@ sgc/                        Template city directory
   AGENTS.md                 Agent instructions, injected at city init
   .claude/CLAUDE.md         City-scoped Claude config (pointed to by CLAUDE_CONFIG_DIR)
   profiles/
-    gc___CITY_NAME___worker.json   Nono security profile template
+    gc-__CITY_NAME__-worker.json   Nono security profile template
     README.md               Profile installation instructions
 sgc-init.sh                 Initializes a new city from the template
 city.nono.toml              Early draft / reference (superseded by sgc/city.toml)
@@ -47,7 +47,7 @@ Or use the `sgc()` shell wrapper from the org notes.
 
 ## Security design
 
-The nono profile (`gc___CITY_NAME___worker.json`) extends nono's `default` profile — not the built-in `claude-code` profile — so it does not inherit the home-directory grants (`$HOME/.claude`, `$HOME/.claude.json`, keychain paths) that the built-in profile provides. The city gets:
+The nono profile (`gc-__CITY_NAME__-worker.json`) extends nono's `default` profile — not the built-in `claude-code` profile — so it does not inherit the home-directory grants (`$HOME/.claude`, `$HOME/.claude.json`, keychain paths) that the built-in profile provides. The city gets:
 
 - Read/write access to the city directory only
 - Explicit deny rules for `$HOME/.claude` and `$HOME/.claude.json`
