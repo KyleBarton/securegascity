@@ -1,6 +1,9 @@
 [workspace]
 name = "__CITY_NAME__"
 
+[beads]
+provider = "file"
+
 [providers.nono]
 display_name = "Nono"
 command = "nono"
@@ -9,11 +12,11 @@ args = [
   "--profile", "gc-__CITY_NAME__-worker",
   "--allow-cwd",
   "--",
-  "claude"
+  "env", "HOME=__CITY_PATH__/home", "claude"
 ]
 prompt_mode = "arg"
 ready_delay_ms = 3000
-ready_prompt_prefix = "> "
+ready_prompt_prefix = "❯ "
 process_names = ["nono"]
 instructions_file = "AGENTS.md"
 
@@ -24,10 +27,3 @@ instructions_file = "AGENTS.md"
 [[agent]]
 name = "mayor"
 provider = "nono"
-
-[agent.env]
-CLAUDE_CONFIG_DIR = "__CITY_PATH__/.claude"
-
-[[named_session]]
-template = "mayor"
-mode = "always"

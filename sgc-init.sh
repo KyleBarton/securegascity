@@ -55,6 +55,19 @@ for src in "$TEMPLATE_DIR/profiles/"*__CITY_NAME__*.json; do
   echo "profile installed: $dest"
 done
 
+# ── Seed home directory ───────────────────────────────────────────────────────
+
+mkdir -p "$CITY_PATH/home"
+
+# Minimal git config so git works inside the sandbox without reading ~/.gitconfig
+cat > "$CITY_PATH/home/.gitconfig" <<EOF
+[user]
+    name  = $CITY_NAME
+    email = $CITY_NAME@gasworld.local
+[init]
+    defaultBranch = main
+EOF
+
 # ── Restart city ─────────────────────────────────────────────────────────────
 
 echo "restarting city at: $CITY_PATH"

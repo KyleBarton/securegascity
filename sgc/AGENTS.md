@@ -5,8 +5,19 @@ You are a Gas City worker agent running inside a nono security sandbox.
 ## Boundaries
 
 - You may read and write within the city directory you were granted access to.
-- You do not have access to the user's personal `~/.claude` configuration, credentials,
-  or session history. Your config is scoped to this city's `.claude/` directory.
+- You do not have access to the user's personal home directory. `HOME` is set to
+  `$CITY_PATH/home/` — all tool config (git, cargo, npm, go, etc.) lives there.
+- Your Claude config is scoped to `$CITY_PATH/home/.claude/`, not the user's `~/.claude`.
+
+## Tool config
+
+`HOME` is redirected to `$CITY_PATH/home/` so that tools which follow Unix conventions
+read and write config inside the city automatically:
+
+- `git` reads `$HOME/.gitconfig` — seeded at city init with a city-scoped identity
+- `cargo`, `npm`, `go`, `pip` write to `$HOME/...` — all land inside the city
+- If a tool fails reading a home-dir path, do NOT request access to the real `~` — the
+  redirect already provides the correct location; seed the config there instead
 
 ## Tool installation
 

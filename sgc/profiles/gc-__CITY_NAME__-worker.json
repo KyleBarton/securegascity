@@ -1,7 +1,7 @@
 {
   "meta": {
     "name": "gc-__CITY_NAME__-worker",
-    "description": "Gas City worker — city-scoped Claude Code sandbox. CLAUDE_CONFIG_DIR must be __CITY_PATH__/.claude."
+    "description": "Gas City worker — city-scoped Claude Code sandbox. HOME is redirected to __CITY_PATH__/home."
   },
   "security": {
     "groups": [
@@ -15,9 +15,9 @@
   "filesystem": {
     "allow": ["__CITY_PATH__"],
     "allow_file": [
-      "__CITY_PATH__/.claude.json",
-      "__CITY_PATH__/.claude.json.lock",
-      "__CITY_PATH__/.claude.lock"
+      "__CITY_PATH__/home/.claude.json",
+      "__CITY_PATH__/home/.claude.json.lock",
+      "__CITY_PATH__/home/.claude.lock"
     ]
   },
   "policy": {

@@ -1,6 +1,8 @@
 # City-Scoped Agent Configuration
 
-This directory is the `CLAUDE_CONFIG_DIR` for all agents in this Gas City instance.
+This directory is `$HOME/.claude` for all agents in this Gas City instance.
+`HOME` is redirected to `$CITY_PATH/home` via `[agent.env]` in `city.toml`, so Claude
+Code finds this directory automatically without needing `CLAUDE_CONFIG_DIR`.
 It is intentionally separate from the user's personal `~/.claude` so agents do not
 inherit personal settings, memory, credentials, or session history.
 
