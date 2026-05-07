@@ -17,13 +17,11 @@ Two failure modes in multi-agent systems:
 sgc/                        Template city directory
   city.toml                 Gas City config (nono provider, worker agent)
   AGENTS.md                 Agent instructions, injected at city init
-  .claude/CLAUDE.md         City-scoped Claude config (pointed to by CLAUDE_CONFIG_DIR)
+  home/.claude/CLAUDE.md    Seeded home directory for the agent (HOME redirect target)
   profiles/
     gc-__CITY_NAME__-worker.json   Nono security profile template
     README.md               Profile installation instructions
 sgc-init.sh                 Initializes a new city from the template
-city.nono.toml              Early draft / reference (superseded by sgc/city.toml)
-Secure_Gc_Agents.org        Research notes on the design
 ```
 
 ## Quick start
@@ -37,13 +35,11 @@ The script:
 1. Copies the `sgc/` template tree to your chosen path, filling all `__CITY_PATH__` and `__CITY_NAME__` placeholders with real values
 2. Installs the nono security profile to `~/.config/nono/profiles/`
 
-Then launch the city with `CLAUDE_CONFIG_DIR` scoped to the city:
+Then launch the city:
 
 ```bash
-CLAUDE_CONFIG_DIR="$CITY_PATH/.claude" gc start
+cd "$CITY_PATH" && gc start
 ```
-
-Or use the `sgc()` shell wrapper from the org notes.
 
 ## Security design
 
