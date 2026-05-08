@@ -4,9 +4,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$SCRIPT_DIR/sgc"
 
-# ── Prompt ────────────────────────────────────────────────────────────────────
+# ── Prompt (skipped if path passed as argument) ───────────────────────────────
 
-read -e -r -p "Destination path for your secure Gas City: " CITY_PATH
+if [[ $# -ge 1 ]]; then
+  CITY_PATH="$1"
+else
+  read -e -r -p "Destination path for your secure Gas City: " CITY_PATH
+fi
 
 # Expand ~ if the user typed it, then strip any trailing slashes
 CITY_PATH="${CITY_PATH/#\~/$HOME}"
@@ -25,7 +29,7 @@ fi
 # ── Copy template tree ────────────────────────────────────────────────────────
 
 # cp -r src/. dst/ copies hidden files and directories (e.g. .claude/)
-cp -r "$TEMPLATE_DIR/." "$CITY_PATH/"
+cp -rf "$TEMPLATE_DIR/." "$CITY_PATH/"
 
 # ── Fill placeholders in city.toml ───────────────────────────────────────────
 
@@ -57,9 +61,11 @@ done
 
 # ── Seed home directory ───────────────────────────────────────────────────────
 
-mkdir -p "$CITY_PATH/home"
+mkdir -p "$CITY_PATH/home/.ssh"
+chmod 700 "$CITY_PATH/home/.ssh"
 
-# Minimal git config so git works inside the sandbox without reading ~/.gitconfig
+# Stub git config so git works inside the sandbox without reading ~/.gitconfig.
+# Override with real values before restarting the city.
 cat > "$CITY_PATH/home/.gitconfig" <<EOF
 [user]
     name  = $CITY_NAME
@@ -68,7 +74,6 @@ cat > "$CITY_PATH/home/.gitconfig" <<EOF
     defaultBranch = main
 EOF
 
-# ── Restart city ─────────────────────────────────────────────────────────────
-
-echo "restarting city at: $CITY_PATH"
-(cd "$CITY_PATH" && gc restart)
+echo ""
+echo "Template installed for city: $CITY_NAME"
+echo "Next: authenticate (nono login or /gc-beta-init), then: cd $CITY_PATH && gc restart"
