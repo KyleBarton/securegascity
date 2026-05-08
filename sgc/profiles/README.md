@@ -10,7 +10,7 @@ are templates — copy them there before launching the city.
 ## Installation
 
 ```sh
-cp profiles/gc-sgc-worker.json ~/.config/nono/profiles/
+cp profiles/gc-<city-name>-worker.json ~/.config/nono/profiles/
 ```
 
 ## Adding credentials
