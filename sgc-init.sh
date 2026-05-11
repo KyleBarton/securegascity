@@ -34,7 +34,7 @@ cp -rf "$TEMPLATE_DIR/." "$CITY_PATH/"
 # ── Fill placeholders in city.toml ───────────────────────────────────────────
 
 # BSD sed (macOS) requires '' after -i; GNU sed accepts it too
-for f in "$CITY_PATH/city.toml" "$CITY_PATH/AGENTS.md"; do
+for f in "$CITY_PATH/city.toml" "$CITY_PATH/AGENTS.md" "$CITY_PATH/AGENTS.worker.md" "$CITY_PATH/pack.toml"; do
   sed -i '' \
     -e "s|__CITY_PATH__|$CITY_PATH|g" \
     -e "s|__CITY_NAME__|$CITY_NAME|g" \

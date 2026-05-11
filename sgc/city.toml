@@ -24,6 +24,26 @@ instructions_file = "AGENTS.md"
 # resume_flag = "--resume"
 # resume_style = "flag"
 
+[providers.nono-worker]
+display_name = "Nono Worker"
+command = "nono"
+args = [
+  "run",
+  "--profile", "gc-__CITY_NAME__-worker",
+  "--allow-cwd",
+  "--",
+  "env", "HOME=__CITY_PATH__/home", "claude"
+]
+prompt_mode = "arg"
+ready_delay_ms = 3000
+ready_prompt_prefix = "❯ "
+process_names = ["nono"]
+instructions_file = "AGENTS.worker.md"
+
 [[agent]]
 name = "mayor"
 provider = "nono"
+
+[[agent]]
+name = "worker"
+provider = "nono-worker"
