@@ -4,10 +4,12 @@ schema = 2
 
 [[agent]]
 name = "mayor"
+provider = "nono"
 prompt_template = "agents/mayor/prompt.template.md"
 
 [[agent]]
 name = "worker"
+provider = "nono-worker"
 prompt_template = "agents/worker/prompt.template.md"
 min_active_sessions = 0
 max_active_sessions = 3

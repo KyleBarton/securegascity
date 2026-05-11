@@ -39,11 +39,3 @@ ready_delay_ms = 3000
 ready_prompt_prefix = "❯ "
 process_names = ["nono"]
 instructions_file = "AGENTS.worker.md"
-
-[[agent]]
-name = "mayor"
-provider = "nono"
-
-[[agent]]
-name = "worker"
-provider = "nono-worker"
