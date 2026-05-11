@@ -9,7 +9,7 @@ prompt_template = "agents/mayor/prompt.template.md"
 
 [[agent]]
 name = "worker"
-provider = "nono-worker"
+provider = "nono"
 prompt_template = "agents/worker/prompt.template.md"
 min_active_sessions = 0
 max_active_sessions = 3
