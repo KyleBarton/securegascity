@@ -2,7 +2,7 @@
 name = "__CITY_NAME__"
 
 [beads]
-provider = "file"
+provider = "bd"
 
 [providers.nono]
 display_name = "Nono"
